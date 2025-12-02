@@ -2,7 +2,8 @@
 
 A 3-band parametric equalizer and real-time spectrum analyzer plugin built with C++ and the JUCE framework.
 
-![Plugin Screenshot]([https://github.com/user-attachments/assets/4f43a15b-ebbb-4520-897f-6330257772e9])
+![Plugin Screenshot]<img width="747" height="632" alt="SimpleEQ_Screenshot" src="https://github.com/user-attachments/assets/99f6ba7a-a7ae-4267-a1a7-5612fd265569" />
+
 
 ## Overview
 SimpleEQ is a VST3 audio plugin capable of shaping audio with high-precision filtering while providing visual feedback. It features a modern, vector-based GUI and a thread-safe architecture that separates real-time audio processing from graphical rendering.
