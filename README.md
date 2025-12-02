@@ -2,7 +2,7 @@
 
 A 3-band parametric equalizer and real-time spectrum analyzer plugin built with C++ and the JUCE framework.
 
-![Plugin Screenshot][<img width="747" height="632" alt="SimpleEQ_Screenshot" src="https://github.com/user-attachments/assets/99f6ba7a-a7ae-4267-a1a7-5612fd265569" />]
+<img width="747" height="632" alt="SimpleEQ_Screenshot" src="https://github.com/user-attachments/assets/99f6ba7a-a7ae-4267-a1a7-5612fd265569" />
 
 
 ## Overview
