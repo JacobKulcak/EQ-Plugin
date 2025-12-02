@@ -67,6 +67,41 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g,
 		g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
     }
 }
+
+void LookAndFeel::drawToggleButton(juce::Graphics& g,
+    juce::ToggleButton& toggleButton,
+    bool shouldDrawButtonAsHighlighted,
+    bool shouldDrawButtonAsDown)
+{
+    using namespace juce;
+    Path powerButton;
+
+    auto bounds = toggleButton.getLocalBounds();
+	auto size = jmin(bounds.getWidth(), bounds.getHeight() - 6);
+    auto r = bounds.withSizeKeepingCentre(size, size).toFloat();
+
+    float ang = 30.f;
+
+    size -= 6;
+
+    powerButton.addCentredArc(r.getCentreX(), r.getCentreY(),
+        size * 0.5f, size * 0.5f,
+        0.f,
+        degreesToRadians(ang),
+        degreesToRadians(360.f - ang),
+		true);
+	powerButton.startNewSubPath(r.getCentreX(), r.getY());
+	powerButton.lineTo(r.getCentre());
+
+	PathStrokeType pst(2.f, PathStrokeType::JointStyle::curved);
+
+	auto color = toggleButton.getToggleState() ? Colours::dimgrey : Colour(0u, 172u, 1u);
+
+    g.setColour(color);
+	g.strokePath(powerButton, pst);
+
+	g.drawEllipse(r, 2.f);
+}
 //==============================================================================
 void RotarySliderWithLabels::paint(juce::Graphics& g)
 {
@@ -270,8 +305,12 @@ void ResponseCurveComponent::timerCallback()
 void ResponseCurveComponent::updateChain()
 {
     auto chainSettings = getChainSettings(audioProcessor.apvts);
+
+	monoChain.setBypassed<ChainPositions::LowCut>(chainSettings.lowCutBypassed);
+	monoChain.setBypassed<ChainPositions::Peak>(chainSettings.peakBypassed);
+	monoChain.setBypassed<ChainPositions::HighCut>(chainSettings.highCutBypassed);
+
     auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
-    
     updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
     
     auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
@@ -310,24 +349,29 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
         if (!monoChain.isBypassed<ChainPositions::Peak>())
             mag *= peak.coefficients->getMagnitudeForFrequency(freq, sampleRate);
 
-        if (!lowcut.isBypassed<0>())
-            mag *= lowcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!lowcut.isBypassed<1>())
-            mag *= lowcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!lowcut.isBypassed<2>())
-            mag *= lowcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!lowcut.isBypassed<3>())
-            mag *= lowcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
 
-        if (!highcut.isBypassed<0>())
-            mag *= highcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!highcut.isBypassed<1>())
-            mag *= highcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!highcut.isBypassed<2>())
-            mag *= highcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-        if (!highcut.isBypassed<3>())
-            mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
-
+        if(!monoChain.isBypassed<ChainPositions::LowCut>())
+        {
+            if (!lowcut.isBypassed<0>())
+                mag *= lowcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!lowcut.isBypassed<1>())
+                mag *= lowcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!lowcut.isBypassed<2>())
+                mag *= lowcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!lowcut.isBypassed<3>())
+                mag *= lowcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+		}
+        if (!monoChain.isBypassed<ChainPositions::HighCut>())
+        {
+            if (!highcut.isBypassed<0>())
+                mag *= highcut.get<0>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!highcut.isBypassed<1>())
+                mag *= highcut.get<1>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!highcut.isBypassed<2>())
+                mag *= highcut.get<2>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+            if (!highcut.isBypassed<3>())
+                mag *= highcut.get<3>().coefficients->getMagnitudeForFrequency(freq, sampleRate);
+        }
         mags[i] = Decibels::gainToDecibels(mag);
     }
 
@@ -547,12 +591,18 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor(SimpleEQAudioProcesso
         addAndMakeVisible(comp);
     }
 
+	peakBypassButton.setLookAndFeel(&lnf);
+	lowcutBypassButton.setLookAndFeel(&lnf);
+	highcutBypassButton.setLookAndFeel(&lnf);
+
     setSize(600, 480);
 }
 
 SimpleEQAudioProcessorEditor::~SimpleEQAudioProcessorEditor()
 {
-
+	peakBypassButton.setLookAndFeel(nullptr);
+	lowcutBypassButton.setLookAndFeel(nullptr);
+	highcutBypassButton.setLookAndFeel(nullptr);
 }
 
 //==============================================================================
